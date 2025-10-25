@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Micro Devices Inc - Stock Share Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .info-section {
+            margin-bottom: 30px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card.max {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .card.min {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-value {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #f00;
+            border-radius: 10px;
+            padding: 20px;
+            color: #c00;
+            text-align: center;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .cik-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="share-entity-name">Advanced Micro Devices Inc</h1>
+        
+        <div class="cik-info" id="cik-display">
+            CIK: 0000002488
+        </div>
+
+        <div class="card-grid">
+            <div class="card max">
+                <div class="card-title">Maximum Shares Outstanding</div>
+                <div class="card-value" id="share-max-value">1,619,000,000</div>
+                <div class="card-label">Fiscal Year: <span id="share-max-fy">2023</span></div>
+            </div>
+
+            <div class="card min">
+                <div class="card-title">Minimum Shares Outstanding</div>
+                <div class="card-value" id="share-min-value">1,213,000,000</div>
+                <div class="card-label">Fiscal Year: <span id="share-min-fy">2021</span></div>
+            </div>
+        </div>
+
+        <footer>
+            Data source: SEC EDGAR | Analysis period: Post-2020
+        </footer>
+    </div>
+
+    <script>
+        function formatNumber(num) {
+            return num.toLocaleString('en-US');
+        }
+
+        function updateDisplay(data) {
+            const entityName = data.entityName;
+            
+            // Update title and h1
+            document.title = `${entityName} - Stock Share Analysis`;
+            document.getElementById('share-entity-name').textContent = entityName;
+            
+            // Update max values
+            document.getElementById('share-max-value').textContent = formatNumber(data.max.val);
+            document.getElementById('share-max-fy').textContent = data.max.fy;
+            
+            // Update min values
+            document.getElementById('share-min-value').textContent = formatNumber(data.min.val);
+            document.getElementById('share-min-fy').textContent = data.min.fy;
+        }
+
+        function processSecData(rawData) {
+            const entityName = rawData.entityName || '';
+            const shares = rawData.units?.shares || [];
+            
+            // Filter for fy > "2020" and numeric val
+            const filtered = shares.filter(entry => {
+                return entry.fy && 
+                       entry.val !== undefined && 
+                       entry.fy > "2020" && 
+                       typeof entry.val === 'number';
+            }).map(entry => ({
+                val: entry.val,
+                fy: String(entry.fy)
+            }));
+            
+            if (filtered.length === 0) {
+                throw new Error('No valid data found for fiscal years > 2020');
+            }
+            
+            // Find max and min
+            const maxEntry = filtered.reduce((max, curr) => curr.val > max.val ? curr : max);
+            const minEntry = filtered.reduce((min, curr) => curr.val < min.val ? curr : min);
+            
+            return {
+                entityName: entityName,
+                max: {
+                    val: maxEntry.val,
+                    fy: maxEntry.fy
+                },
+                min: {
+                    val: minEntry.val,
+                    fy: minEntry.fy
+                }
+            };
+        }
+
+        async function loadData(cik = '0000002488') {
+            try {
+                const url = `https://data.sec.gov/api/xbrl/companyconcept/CIK${cik}/dei/EntityCommonStockSharesOutstanding.json`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'AMD Stock Analysis Tool contact@example.com'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const rawData = await response.json();
+                const processedData = processSecData(rawData);
+                
+                updateDisplay(processedData);
+                document.getElementById('cik-display').textContent = `CIK: ${cik}`;
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.querySelector('.container').innerHTML = `
+                    <div class="error">
+                        <h2>Error Loading Data</h2>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Check for CIK parameter on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cikParam = urlParams.get('CIK');
+            
+            if (cikParam) {
+                loadData(cikParam);
+            } else {
+                // Load default AMD data
+                fetch('data.json')
+                    .then(response => response.json())
+                    .then(data => updateDisplay(data))
+                    .catch(error => {
+                        console.error('Error loading local data:', error);
+                        loadData('0000002488');
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
