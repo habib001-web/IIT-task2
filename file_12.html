@@ -1,0 +1,62 @@
+#### `index.html`
+
+- **HTML Structure**: Semantic markup with required IDs
+- **CSS Styling**: Modern gradient design with card-based layout
+- **JavaScript Functions**:
+  - `formatNumber(num)`: Formats numbers with locale-specific separators
+  - `updateDisplay(data)`: Updates all DOM elements with data
+  - `processSecData(rawData)`: Processes SEC API response
+  - `loadData(cik)`: Fetches and displays data for specified CIK
+
+### Required Element IDs
+
+The following IDs are used for automatic data population:
+
+- `share-entity-name`: Company name (in h1)
+- `share-max-value`: Maximum share value
+- `share-max-fy`: Fiscal year of maximum
+- `share-min-value`: Minimum share value
+- `share-min-fy`: Fiscal year of minimum
+
+## Technical Details
+
+### SEC API Compliance
+
+The application follows SEC EDGAR API guidelines:
+- Sets descriptive User-Agent header
+- Uses official SEC data endpoints
+- Respects rate limits
+
+### Data Filtering Logic
+
+Only includes entries where:
+- Fiscal year (`fy`) is greater than "2020"
+- Value (`val`) is a numeric type
+- Both fields are present in the data
+
+### Browser Compatibility
+
+Tested and working on:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+
+## License
+
+MIT License - see LICENSE file for full text.
+
+Copyright (c) 2024 AMD Stock Share Analysis
+
+Permission is granted to use, modify, and distribute this software freely.
+
+## Data Attribution
+
+All stock data sourced from the U.S. Securities and Exchange Commission EDGAR database.
+
+## Support
+
+For issues or questions:
+1. Check that your CIK is valid (10 digits, zero-padded)
+2. Verify internet connectivity for live data fetching
+3. Ensure browser JavaScript is enabled
+4. Check browser console for detailed error messages
